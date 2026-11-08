@@ -251,25 +251,6 @@ a { color: inherit; text-decoration: none; }
   position: absolute;
   inset: 0;
 }
-.slider-bg-scene {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, #d4a574 0%, #c49664 45%, #8b6914 100%);
-  z-index: 0;
-}
-.slider-bg-scene::before {
-  /* soft table surface */
-  content: "";
-  position: absolute;
-  left: 0; right: 0; bottom: 0;
-  height: 35%;
-  background: linear-gradient(180deg, transparent, rgba(0,0,0,0.2));
-}
-.slider-before img {
-  position: relative;
-  z-index: 1;
-  filter: drop-shadow(0 12px 24px rgba(0,0,0,0.35));
-}
 .slider-after {
   position: absolute;
   inset: 0;
