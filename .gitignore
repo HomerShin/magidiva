@@ -51,3 +51,10 @@ _blank.png
 _temp_*
 *_tmp_*
 tmp/
+
+# Build / release artifacts
+_releases/
+_license_mock_server.py
+_logo_base.*
+_gen_icons.py
+*.png
