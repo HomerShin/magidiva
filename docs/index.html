@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MagiDiva — Remove Image Background in One Click</title>
+<meta name="description" content="MagiDiva is a free, open-source AI background remover for Windows. Remove backgrounds from product photos, selfies, and more — instantly, locally, with zero uploads.">
+<meta name="keywords" content="background remover, AI background removal, image cutout, free background remover, open source, Tauri, ONNX">
+<meta property="og:title" content="MagiDiva — Remove Image Background in One Click">
+<meta property="og:description" content="Free & open-source AI background remover. Runs locally on your machine. No uploads. No subscriptions.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23d946ef'/><text x='50' y='66' font-family='Arial' font-weight='800' font-size='54' fill='white' text-anchor='middle'>M</text></svg>">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#" class="logo">
+      <span class="logo-dot"></span>
+      <span>MagiDiva</span>
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+      <a href="https://github.com/HomerShin/magidiva" target="_blank" class="gh-link" aria-label="GitHub">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+      </a>
+      <a href="#download" class="btn btn-primary btn-sm">Download Free</a>
+    </div>
+    <button class="nav-toggle" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-copy">
+      <div class="badge">
+        <span class="badge-dot"></span>
+        v0.1 · Community & Pro
+      </div>
+      <h1>Remove image backgrounds<br><span class="gradient-text">in one click</span></h1>
+      <p class="hero-sub">
+        MagiDiva is a free, open-source AI background remover. Runs locally on your Windows machine —
+        no uploads, no subscriptions, no watermarks.
+      </p>
+      <div class="hero-ctas">
+        <a href="#download" class="btn btn-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download for Windows
+        </a>
+        <a href="#pricing" class="btn btn-ghost">
+          See pricing →
+        </a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat">
+          <strong>100%</strong>
+          <span>Local processing</span>
+        </div>
+        <div class="stat">
+          <strong>AGPLv3</strong>
+          <span>Open source</span>
+        </div>
+        <div class="stat">
+          <strong>∞</strong>
+          <span>Free forever</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Interactive before/after slider -->
+    <div class="hero-visual">
+      <div class="slider-wrap">
+        <div class="slider-frame">
+          <div class="slider-before">
+            <div class="slider-bg-scene"></div>
+            <img src="assets/coffee.png" alt="Original with background">
+            <span class="label-badge">BEFORE</span>
+          </div>
+          <div class="slider-after" id="sliderAfter">
+            <div class="checkerboard-overlay"></div>
+            <img src="assets/coffee.png" alt="Cutout on transparent">
+            <span class="label-badge after">AFTER</span>
+          </div>
+          <div class="slider-handle" id="sliderHandle">
+            <div class="handle-line"></div>
+            <div class="handle-circle">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M8 6l-6 6 6 6M16 6l6 6-6 6"/></svg>
+            </div>
+          </div>
+        </div>
+        <p class="slider-hint">← drag to compare →</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section class="section" id="how">
+  <div class="container">
+    <h2 class="section-title">Three steps. That's it.</h2>
+    <p class="section-sub">No signup. No learning curve. Just drop, click, done.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>Drop your image</h3>
+        <p>Drag &amp; drop a photo or folder onto MagiDiva. Supports PNG, JPG, WEBP.</p>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>Click Process</h3>
+        <p>AI does the rest — hair, fur, glass, all handled by BirefNet running locally.</p>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>Export &amp; use</h3>
+        <p>Save transparent PNG or add a custom background. Open in folder with one click.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="section" id="features">
+  <div class="container">
+    <h2 class="section-title">Everything you need. Nothing you don't.</h2>
+    <p class="section-sub">Built for creators, sellers, and developers who care about speed and privacy.</p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🔒</div>
+        <h3>Private by design</h3>
+        <p>All processing happens locally on your machine. Your photos never leave your disk.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>Lightning fast</h3>
+        <p>GPU-accelerated with DirectML &amp; ONNX Runtime. Cutout in seconds, not minutes.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎯</div>
+        <h3>Precise cutouts</h3>
+        <p>BirefNet handles hair, fur, glass, and semi-transparent objects with pixel precision.</p>
+      </div>
+      <div class="feature-card pro-border">
+        <div class="pro-tag">PRO</div>
+        <div class="feature-icon">📦</div>
+        <h3>Batch processing</h3>
+        <p>Drop an entire folder. Process 100+ images while you sleep. Cancel anytime.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎨</div>
+        <h3>Custom backgrounds</h3>
+        <p>Solid color, white, or your own image. Add drop shadow, adjust opacity.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💧</div>
+        <h3>Watermark</h3>
+        <p>Stamp your logo with adjustable opacity and 9 positions. Protect your work.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📐</div>
+        <h3>Size presets</h3>
+        <p>Shopify, Amazon, eBay, and custom dimensions. Center objects automatically.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💾</div>
+        <h3>Multiple formats</h3>
+        <p>Export as PNG (transparent), JPG, or WEBP. Tune quality to balance size vs. fidelity.</p>
+      </div>
+      <div class="feature-card pro-border">
+        <div class="pro-tag">PRO</div>
+        <div class="feature-icon">🖼️</div>
+        <h3>Gallery view</h3>
+        <p>Browse batch results as thumbnails, click to preview full-size. Delete, re-process.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Compare -->
+<section class="section section-alt" id="compare">
+  <div class="container">
+    <h2 class="section-title">Community or Pro? You decide.</h2>
+    <p class="section-sub">Start free. Upgrade when you need to process more than one image at a time.</p>
+
+    <div class="compare-wrap">
+      <div class="compare-col">
+        <div class="compare-header free">
+          <h3>Community</h3>
+          <div class="price">Free</div>
+          <p>AGPLv3 · Open source</p>
+        </div>
+        <ul class="compare-list">
+          <li><span class="check">✓</span> Single image processing</li>
+          <li><span class="check">✓</span> Local AI (ONNX + DirectML)</li>
+          <li><span class="check">✓</span> Custom backgrounds</li>
+          <li><span class="check">✓</span> Size presets</li>
+          <li><span class="check">✓</span> Watermark</li>
+          <li><span class="check">✓</span> Multiple export formats</li>
+          <li class="disabled"><span class="cross">✕</span> Batch processing</li>
+          <li class="disabled"><span class="cross">✕</span> Folder drag &amp; drop</li>
+          <li class="disabled"><span class="cross">✕</span> Gallery view</li>
+          <li class="disabled"><span class="cross">✕</span> Cancel mid-batch</li>
+        </ul>
+        <a href="#download" class="btn btn-ghost full">Download Free</a>
+      </div>
+
+      <div class="compare-col featured">
+        <div class="compare-header pro">
+          <div class="featured-tag">Most popular</div>
+          <h3>Pro</h3>
+          <div class="price">$49<span class="price-sub"> / perpetual</span></div>
+          <p>Commercial license · Lifetime updates</p>
+        </div>
+        <ul class="compare-list">
+          <li><span class="check">✓</span> Everything in Community</li>
+          <li><span class="check">✓</span> <strong>Batch processing</strong></li>
+          <li><span class="check">✓</span> <strong>Folder drag &amp; drop</strong></li>
+          <li><span class="check">✓</span> <strong>Gallery view</strong></li>
+          <li><span class="check">✓</span> <strong>Cancel mid-batch</strong></li>
+          <li><span class="check">✓</span> Priority email support</li>
+          <li><span class="check">✓</span> No AGPL copyleft</li>
+          <li><span class="check">✓</span> Use in commercial products</li>
+          <li><span class="check">✓</span> All future features</li>
+          <li><span class="check">✓</span> Lifetime updates</li>
+        </ul>
+        <a href="#pricing" class="btn btn-primary full">Get Pro — $49</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing -->
+<section class="section" id="pricing">
+  <div class="container pricing-inner">
+    <h2 class="section-title">Simple pricing. No tricks.</h2>
+    <p class="section-sub">Pay once, own forever. Upgrade only when you need batch.</p>
+
+    <div class="pricing-cards">
+      <div class="pricing-card">
+        <h3>Community</h3>
+        <div class="big-price">Free</div>
+        <p class="price-desc">Open source · AGPLv3</p>
+        <ul>
+          <li>Single image cutout</li>
+          <li>All basic editing</li>
+          <li>Local AI, private</li>
+          <li>Community support</li>
+        </ul>
+        <a href="#download" class="btn btn-ghost full">Download free</a>
+      </div>
+
+      <div class="pricing-card spotlight">
+        <div class="spotlight-badge">BEST VALUE</div>
+        <h3>Pro — Personal</h3>
+        <div class="big-price">$49<span class="perpetual"> / forever</span></div>
+        <p class="price-desc">For solo creators &amp; small teams</p>
+        <ul>
+          <li>Everything in Community</li>
+          <li><strong>Batch + folder drop</strong></li>
+          <li><strong>Gallery view</strong></li>
+          <li><strong>Cancel mid-batch</strong></li>
+          <li>Commercial use allowed</li>
+          <li>Priority email support</li>
+          <li>Lifetime updates</li>
+        </ul>
+        <a href="#" class="btn btn-primary full">Buy Pro — $49</a>
+      </div>
+
+      <div class="pricing-card">
+        <h3>Studio</h3>
+        <div class="big-price">$199</div>
+        <p class="price-desc">5 licenses · Team use</p>
+        <ul>
+          <li>Everything in Pro</li>
+          <li>5 seat licenses</li>
+          <li>Shared install management</li>
+          <li>1-year priority support</li>
+          <li>Custom feature requests</li>
+        </ul>
+        <a href="mailto:studio@magidiva.com" class="btn btn-ghost full">Contact us</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Download -->
+<section class="section" id="download">
+  <div class="container download-inner">
+    <h2 class="section-title">Download MagiDiva</h2>
+    <p class="section-sub">Free forever. Windows 10 / 11 · 64-bit.</p>
+
+    <div class="download-row">
+      <div class="download-card">
+        <div class="download-icon">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-13.051-1.351"/></svg>
+        </div>
+        <h3>Windows</h3>
+        <div class="download-buttons">
+          <a href="https://github.com/HomerShin/magidiva/releases/latest" target="_blank" class="btn btn-primary">
+            Community · Free
+          </a>
+          <a href="https://github.com/HomerShin/magidiva/releases/latest" target="_blank" class="btn btn-ghost">
+            Pro · $49
+          </a>
+        </div>
+        <p class="version-note">Latest: v0.1 · Windows 10/11 64-bit</p>
+      </div>
+
+      <div class="download-card soon">
+        <div class="download-icon muted">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+        </div>
+        <h3>macOS</h3>
+        <p class="soon-text">Coming soon · Apple Silicon &amp; Intel</p>
+      </div>
+
+      <div class="download-card soon">
+        <div class="download-icon muted">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 9.48l1.84-3.18a.4.4 0 00-.16-.55.4.4 0 00-.55.16l-1.86 3.22a11.6 11.6 0 00-7.74 0L7.27 5.91a.4.4 0 00-.55-.16.4.4 0 00-.16.55l1.84 3.18A10.5 10.5 0 001 18.5h22a10.5 10.5 0 00-5.4-9.02M9.55 15.55a1.55 1.55 0 110-3.1 1.55 1.55 0 010 3.1m4.9 0a1.55 1.55 0 110-3.1 1.55 1.55 0 010 3.1"/></svg>
+        </div>
+        <h3>Linux</h3>
+        <p class="soon-text">Coming soon · AppImage &amp; deb</p>
+      </div>
+    </div>
+
+    <div class="source-row">
+      <a href="https://github.com/HomerShin/magidiva" target="_blank" class="btn btn-ghost">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        View source on GitHub
+      </a>
+      <span class="license">AGPLv3 · Open source · Built with Tauri + Rust + ONNX</span>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="section" id="faq">
+  <div class="container">
+    <h2 class="section-title">Frequently asked questions</h2>
+    <p class="section-sub">Can't find your answer? <a href="mailto:hello@magidiva.com">Email us</a>.</p>
+
+    <div class="faq-list">
+      <details>
+        <summary><strong>Is MagiDiva really free?</strong><span class="faq-icon">+</span></summary>
+        <p>Yes. MagiDiva Community is 100% free and open-source under AGPLv3. No hidden fees, no trial period, no watermarks on exports. The Pro edition ($49 one-time) adds batch processing, folder drop, and gallery view for creators who need to process many images at once.</p>
+      </details>
+
+      <details>
+        <summary><strong>How is this different from Remove.bg or Adobe Express?</strong><span class="faq-icon">+</span></summary>
+        <p>Three big differences: <strong>privacy</strong> — your images never leave your machine; <strong>cost</strong> — those services charge per-image or monthly subscriptions; <strong>control</strong> — MagiDiva runs local AI via ONNX + DirectML, so you pick the model, the background, the format, and every setting. No internet needed after the first model download.</p>
+      </details>
+
+      <details>
+        <summary><strong>Does it work offline?</strong><span class="faq-icon">+</span></summary>
+        <p>Yes. After the initial model download (~20 MB), MagiDiva works completely offline. The AI runs locally on your GPU (or CPU fallback). Great for privacy-sensitive workplaces, travel, or no-internet environments.</p>
+      </details>
+
+      <details>
+        <summary><strong>What AI model does it use?</strong><span class="faq-icon">+</span></summary>
+        <p>MagiDiva uses <a href="https://github.com/zhengpeng7/birefnet" target="_blank">BirefNet</a> — a state-of-the-art background removal model that handles hair, fur, glass, and semi-transparent materials exceptionally well. We bundle three sizes: <code>birefnet-general-lite</code> (fast), <code>birefnet-general</code> (balanced), and <code>birefnet-general-full</code> (maximum quality).</p>
+      </details>
+
+      <details>
+        <summary><strong>Why Rust + Tauri instead of Electron?</strong><span class="faq-icon">+</span></summary>
+        <p>Smaller, faster, lighter. A Tauri app ships in ~8 MB vs. 150+ MB for an equivalent Electron app. The AI inference is native Rust (via ONNX Runtime bindings), so there's no Node.js overhead. And the security story is better — fewer attack surfaces, automatic sandboxing.</p>
+      </details>
+
+      <details>
+        <summary><strong>Can I use Pro features commercially?</strong><span class="faq-icon">+</span></summary>
+        <p>Yes. The Pro edition includes a commercial-use license. The Community edition is AGPLv3 — that means if you ship a modified version, you must release your changes under AGPLv3. For most commercial use cases (using MagiDiva as a tool, not embedding it), Pro is the right choice.</p>
+      </details>
+
+      <details>
+        <summary><strong>macOS and Linux — when?</strong><span class="faq-icon">+</span></summary>
+        <p>Tauri v2 supports all three platforms. We're prioritizing Windows first because DirectML gives the best GPU acceleration story. macOS (Metal) and Linux (CUDA/ROCm) builds are planned for Q1 2027 — follow us on GitHub to be notified.</p>
+      </details>
+
+      <details>
+        <summary><strong>What system specs do I need?</strong><span class="faq-icon">+</span></summary>
+        <p>Windows 10/11 64-bit, 4 GB RAM minimum, DirectX 12 GPU recommended (for DirectML acceleration). Works on CPU too, just slower. The app is ~30 MB, model files ~20–80 MB depending on which one you choose.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- CTA banner -->
+<section class="cta-section">
+  <div class="container">
+    <h2>Ready to stop paying per cutout?</h2>
+    <p>Download MagiDiva Community — free forever, no strings attached.</p>
+    <a href="#download" class="btn btn-primary btn-lg">Get MagiDiva Free</a>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="container footer-inner">
+    <div class="footer-col">
+      <div class="logo">
+        <span class="logo-dot"></span>
+        <span>MagiDiva</span>
+      </div>
+      <p class="footer-tag">AI background removal. Local. Fast. Free.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Product</h4>
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#download">Download</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <div class="footer-col">
+      <h4>Open Source</h4>
+      <a href="https://github.com/HomerShin/magidiva" target="_blank">GitHub</a>
+      <a href="https://github.com/HomerShin/magidiva/blob/main/LICENSE-AGPL" target="_blank">License</a>
+      <a href="https://github.com/HomerShin/magidiva/issues" target="_blank">Report a bug</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="mailto:hello@magidiva.com">Contact</a>
+      <a href="mailto:studio@magidiva.com">Studio licensing</a>
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="container">
+      <p>© 2026 MagiDiva. Built with ❤️ in Rust &amp; React.</p>
+    </div>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
