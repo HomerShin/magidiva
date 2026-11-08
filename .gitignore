@@ -1,0 +1,53 @@
+# ==== Logs ====
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ==== JS / TS / Vite ====
+node_modules
+dist
+dist-ssr
+*.local
+
+# ==== Rust / Tauri ====
+target/
+!src-tauri/icons/
+src-tauri/target/
+
+# ==== Editor ====
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+
+# ==== Windows junk ====
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.user
+
+# ==== Build artifacts we ship separately ====
+*.msi
+*.appx
+*.appxbundle
+
+# ==== Docs / research artifacts (generated locally, not source) ====
+competitive-analysis/
+solo-software-ideas/
+.trae-html-share-packages/
+
+# ==== Local test artifacts ====
+_test_images/
+_blank.png
+
+# ==== OS temp files ====
+_temp_*
+*_tmp_*
+tmp/

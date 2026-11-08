@@ -1,0 +1,62 @@
+# MagiDiva — Commercial License (Pro Edition)
+
+**Version 1.0 · 2026-11-08**
+
+This license covers the MagiDiva **Pro Edition** — the binary built with
+`cargo build --features pro`, which enables batch processing, folder scanning,
+and mid-batch cancellation. The Pro source code is dual-licensed; see
+LICENSE-AGPL for the open-source (AGPLv3) option.
+
+## 1. Grant
+
+MagiDiva grants you a perpetual, non-exclusive, non-transferable license to:
+
+1. **Run** the Pro Edition binary on your own computers, for personal or
+   commercial use.
+2. **Bundle** the Pro Edition into internal workflows (CI pipelines, in-house
+   tools, desktop applications) when purchased under an **Enterprise Seat**.
+3. **Use results** — images processed through MagiDiva — in any product you
+   ship, without restriction and without attribution.
+
+## 2. Seats
+
+| Tier | Price | Scope |
+|---|---|---|
+| **Individual** | $49 one-time | 1 developer lifetime license · personal + commercial · binary-only distribution |
+| **Studio / Team** | $199 one-time | 10 developer seats · internal workflows OK · source-available optional |
+| **Enterprise** | Custom | Unlimited seats · source license · white-label · priority support |
+
+> Pricing at [magidiva.com/pricing](https://magidiva.com/pricing).
+
+## 3. Restrictions
+
+You may **not**:
+
+1. Redistribute the Pro Edition source code under the AGPLv3 license terms.
+   If you modify the Pro source and wish to share it, contact hello@magidiva.com
+   for a sublicense.
+2. Resell or sublicense MagiDiva Pro as a standalone product. To offer a
+   reseller / white-label version, use the Enterprise tier.
+3. Remove or alter the PRO badge or "Commercial license" attribution displayed
+   in the app UI.
+
+## 4. Support
+
+Individual / Studio tiers include **community support via GitHub Issues**.
+Enterprise tier includes priority email support.
+
+## 5. Warranty
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+## 6. Contact
+
+Legal questions → **hello@magidiva.com**
+Commercial licensing → **sales@magidiva.com**
+Bug reports → GitHub Issues
