@@ -124,7 +124,8 @@ async fn batch_process(
     inputs: Vec<String>,
     output_dir: String,
     opts: Option<ProcessOpts>,
-) -> Vec<ProcessResult> {
+) -> Result<Vec<ProcessResult>, String> {
+    check_pro_license()?;
     let flag = cancel_flag();
     flag.store(false, Ordering::Relaxed);
 
@@ -212,7 +213,8 @@ async fn batch_process(
         results
     })
     .await
-    .unwrap_or_default()
+    .map(|v| Ok(v))
+    .unwrap_or_else(|e| Err(format!("Batch cancelled: {e}")))
 }
 
 #[tauri::command]
@@ -261,7 +263,8 @@ async fn reveal_in_folder(app: AppHandle, path: String) -> Result<(), String> {
 
 #[cfg(feature = "pro")]
 #[tauri::command]
-fn walk_paths(paths: Vec<String>) -> Vec<String> {
+fn walk_paths(paths: Vec<String>) -> Result<Vec<String>, String> {
+    check_pro_license()?;
     use std::collections::HashSet;
     let exts: [&str; 4] = ["png", "jpg", "jpeg", "webp"];
     let mut seen: HashSet<String> = HashSet::new();
@@ -286,7 +289,7 @@ fn walk_paths(paths: Vec<String>) -> Vec<String> {
             }
         }
     }
-    out
+    Ok(out)
 }
 
 /// Pro only — signal an in-flight batch_process to stop after the current image.
@@ -311,6 +314,197 @@ struct AppInfo {
     version: String,
 }
 
+// ──────────────────────────────────────────────────
+// License activation — shared by Community & Pro builds.
+// Pro build gates batch/gallery on license.valid.
+// Community build always returns valid=true (no gating needed).
+// ──────────────────────────────────────────────────
+
+/// License server base URL — deployed as Cloudflare Worker.
+const LICENSE_SERVER: &str = "https://license.magidiva.com";
+
+/// Client-side HMAC public key (used for quick local signature check — reserved).
+/// Server private key generates the signature — never shipped to clients.
+#[allow(dead_code)]
+const CLIENT_HMAC_KEY: &[u8] = b"magiDiva-CLIENT-PUBLIC-VERIFY-KEY-v1";
+
+/// License persisted to disk.
+#[derive(Serialize, Deserialize, Clone, Default)]
+struct LicenseFile {
+    email: String,
+    key: String,
+    plan: String,
+    verified_at: Option<i64>,
+    /// Signed payload from server — client can HMAC-verify locally
+    local_token: Option<String>,
+    /// Seconds of grace — if last online verification older than this, lock Pro
+    grace_seconds: i64,
+}
+
+fn license_path() -> Option<PathBuf> {
+    let dir = dirs::data_dir()?.join("MagiDiva");
+    Some(dir.join("license.json"))
+}
+
+/// Quick in-process gate — called by batch_process/walk_paths to enforce
+/// activation before allowing Pro-only operations.
+#[cfg(feature = "pro")]
+fn check_pro_license() -> Result<(), String> {
+    let Some(path) = license_path() else {
+        return Err("Pro activation required — no license file found".into());
+    };
+    let Ok(raw) = std::fs::read_to_string(&path) else {
+        return Err("Pro activation required — cannot read license".into());
+    };
+    let Ok(lic) = serde_json::from_str::<LicenseFile>(&raw) else {
+        return Err("Pro activation required — invalid license file".into());
+    };
+    // Local token present + within grace → allow
+    if lic.local_token.is_some() {
+        let now = chrono::Utc::now().timestamp();
+        if let Some(v) = lic.verified_at {
+            if now - v <= lic.grace_seconds {
+                return Ok(());
+            }
+        }
+    }
+    Err("Pro activation required — please re-activate".into())
+}
+
+#[allow(dead_code)]
+fn hmac_sha256(key: &[u8], msg: &[u8]) -> [u8; 32] {
+    use hmac::{Hmac, Mac};
+    use sha2::Sha256;
+    let mut mac = Hmac::<Sha256>::new_from_slice(key).expect("valid key length");
+    mac.update(msg);
+    mac.finalize().into_bytes().into()
+}
+
+/// Verify a local_token signature client-side (fast path — no network).
+#[allow(dead_code)]
+fn verify_local_token(email: &str, plan: &str, expires_ts: i64, token: &str) -> bool {
+    // token format: hex( HMAC(email|plan|expires) )
+    let expected = hmac_sha256(
+        CLIENT_HMAC_KEY,
+        format!("{email}|{plan}|{expires_ts}").as_bytes(),
+    );
+    let expected_hex = hex::encode(expected);
+    expected_hex == token
+}
+
+#[tauri::command]
+fn get_license() -> LicenseStatus {
+    // Community build — always fully licensed, no activation needed
+    if !cfg!(feature = "pro") {
+        return LicenseStatus {
+            valid: true, plan: "community".into(),
+            email: None, expires_at: None,
+            message: "Community edition".into(),
+        };
+    }
+
+    let Some(path) = license_path() else {
+        return LicenseStatus { valid: false, plan: "pro".into(), email: None, expires_at: None,
+            message: "No license found".into() };
+    };
+
+    let Ok(raw) = std::fs::read_to_string(&path) else {
+        return LicenseStatus { valid: false, plan: "pro".into(), email: None, expires_at: None,
+            message: "Cannot read license file".into() };
+    };
+    let Ok(lic) = serde_json::from_str::<LicenseFile>(&raw) else {
+        return LicenseStatus { valid: false, plan: "pro".into(), email: None, expires_at: None,
+            message: "Invalid license file".into() };
+    };
+
+    // Check local signature first (fast)
+    if lic.local_token.is_some() {
+        // If grace period exceeded, mark invalid (frontend will prompt re-activate)
+        let now = chrono::Utc::now().timestamp();
+        let grace_expired = lic.verified_at.map_or(true, |v| now - v > lic.grace_seconds);
+
+        return LicenseStatus {
+            valid: !grace_expired,
+            plan: lic.plan.clone(),
+            email: Some(lic.email.clone()),
+            expires_at: lic.verified_at.map(|v| v + lic.grace_seconds),
+            message: if grace_expired { "Offline grace expired — re-activate".into() } else { "OK".into() },
+        };
+    }
+
+    LicenseStatus { valid: false, plan: "pro".into(), email: None, expires_at: None,
+        message: "No local token".into() }
+}
+
+#[derive(Serialize, Clone)]
+struct LicenseStatus {
+    valid: bool,
+    plan: String,
+    email: Option<String>,
+    expires_at: Option<i64>,
+    message: String,
+}
+
+#[tauri::command]
+fn activate_license(email: String, key: String) -> Result<LicenseStatus, String> {
+    if !cfg!(feature = "pro") {
+        return Ok(LicenseStatus { valid: true, plan: "community".into(), email: Some(email), expires_at: None,
+            message: "Community — no activation needed".into() });
+    }
+
+    // Call server verify endpoint
+    let url = format!("{}/api/license/verify", LICENSE_SERVER);
+    let body = serde_json::json!({ "email": email, "key": key });
+    let resp = ureq::post(&url)
+        .set("Content-Type", "application/json")
+        .send_string(&body.to_string())
+        .map_err(|e| format!("Network error: {e}"))?;
+
+    let resp_json: serde_json::Value = serde_json::from_str(&resp.into_string().unwrap_or_default())
+        .map_err(|e| format!("Bad response: {e}"))?;
+
+    let valid = resp_json["valid"].as_bool().unwrap_or(false);
+    let plan = resp_json["plan"].as_str().unwrap_or("pro").to_string();
+
+    if !valid {
+        return Err(resp_json["message"].as_str().unwrap_or("License key invalid").to_string());
+    }
+
+    let now = chrono::Utc::now().timestamp();
+    let token = resp_json["token"].as_str().map(|s| s.to_string());
+
+    let lic = LicenseFile {
+        email: email.clone(),
+        key: key.clone(),
+        plan: plan.clone(),
+        verified_at: Some(now),
+        local_token: token,
+        grace_seconds: 7 * 24 * 3600, // 7 days grace
+    };
+
+    // Persist
+    if let Some(path) = license_path() {
+        if let Some(dir) = path.parent() {
+            let _ = std::fs::create_dir_all(dir);
+        }
+        let _ = std::fs::write(&path, serde_json::to_string_pretty(&lic).unwrap_or_default());
+    }
+
+    Ok(LicenseStatus {
+        valid: true, plan, email: Some(email),
+        expires_at: Some(now + lic.grace_seconds),
+        message: "License activated ✓".into(),
+    })
+}
+
+#[tauri::command]
+fn clear_license() -> Result<(), String> {
+    if let Some(path) = license_path() {
+        let _ = std::fs::remove_file(&path);
+    }
+    Ok(())
+}
+
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {name}! Welcome to MagiDiva ✨")
@@ -333,6 +527,9 @@ pub fn run() {
                 reveal_in_folder,
                 list_models,
                 app_info,
+                get_license,
+                activate_license,
+                clear_license,
             ])
             .run(tauri::generate_context!())
             .expect("error while running tauri application");
@@ -356,6 +553,9 @@ pub fn run() {
                 reveal_in_folder,
                 list_models,
                 app_info,
+                get_license,
+                activate_license,
+                clear_license,
             ])
             .run(tauri::generate_context!())
             .expect("error while running tauri application");

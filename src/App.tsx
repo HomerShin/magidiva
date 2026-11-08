@@ -78,6 +78,14 @@ function App() {
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
   const [isPro, setIsPro] = useState(false);
   const [appVersion, setAppVersion] = useState("0.0.0");
+  // License gating — Pro builds show activation prompt if invalid
+  const [licenseValid, setLicenseValid] = useState(true); // default true to avoid flash
+  const [licenseEmail, setLicenseEmail] = useState<string | null>(null);
+  const [showActivation, setShowActivation] = useState(false);
+  const [actEmail, setActEmail] = useState("");
+  const [actKey, setActKey] = useState("");
+  const [actBusy, setActBusy] = useState(false);
+  const [actMsg, setActMsg] = useState("");
   const addPathsRef = useRef<(paths: string[]) => void>(() => {});
   const cancelledRef = useRef(false);
 
@@ -91,6 +99,16 @@ function App() {
     // Feature flag check — drives Community vs Pro UI
     invoke<{ is_pro: boolean; version: string }>("app_info").then(
       (info) => { setIsPro(info.is_pro); setAppVersion(info.version); },
+      () => {}
+    );
+
+    // License check — Pro builds need activation
+    invoke<{ valid: boolean; plan: string; email: string | null; expires_at: number | null; message: string }>("get_license").then(
+      (lic) => {
+        setLicenseValid(lic.valid);
+        setLicenseEmail(lic.email);
+        if (lic.plan === "pro" && !lic.valid) setShowActivation(true);
+      },
       () => {}
     );
 
@@ -403,6 +421,44 @@ function App() {
     try { await invoke("reveal_in_folder", { path }); } catch { addToast("⚠ Cannot open folder", "error"); }
   };
 
+  const handleActivate = async () => {
+    if (!actEmail.trim() || !actKey.trim()) {
+      setActMsg("Please enter both email and license key");
+      return;
+    }
+    setActBusy(true);
+    setActMsg("");
+    try {
+      const status = await invoke<{ valid: boolean; plan: string; email: string | null; expires_at: number | null; message: string }>(
+        "activate_license", { email: actEmail.trim(), key: actKey.trim() }
+      );
+      if (status.valid) {
+        setLicenseValid(true);
+        setLicenseEmail(status.email ?? actEmail);
+        setShowActivation(false);
+        setActMsg("");
+        setActKey("");
+        addToast("✓ Pro activated! Batch & gallery unlocked.", "success");
+      } else {
+        setActMsg(status.message || "Activation failed");
+      }
+    } catch (err) {
+      setActMsg(String(err));
+    } finally {
+      setActBusy(false);
+    }
+  };
+
+  const handleDeactivate = async () => {
+    try {
+      await invoke("clear_license");
+      setLicenseValid(false);
+      setLicenseEmail(null);
+      setShowActivation(true);
+      addToast("License cleared", "info");
+    } catch {}
+  };
+
   const pendingCount = files.filter((f) => f.status === "pending" || f.status === "error").length;
   const doneCount = files.filter((f) => f.status === "done").length;
   const selectedFile = files.find((f) => f.id === selectedFileId) ?? files[0];
@@ -442,7 +498,20 @@ function App() {
           <h1 className="text-xs font-semibold tracking-tight text-white/90">MagiDiva</h1>
           <span className="text-[10px] text-white/30">— AI Product Image Magic</span>
           {isPro && (
-            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-gradient-to-r from-amber-400 to-orange-400 text-black">PRO</span>
+            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-gradient-to-r from-amber-400 to-orange-400 text-black">
+              PRO{licenseValid && licenseEmail ? ` · ${licenseEmail.split("@")[0]}` : ""}
+            </span>
+          )}
+          {isPro && licenseValid && (
+            <button data-no-drag onClick={handleDeactivate}
+              className="text-[10px] text-white/20 hover:text-red-400 underline ml-1"
+              title="Deactivate license">✕</button>
+          )}
+          {isPro && !licenseValid && (
+            <button data-no-drag onClick={() => setShowActivation(true)}
+              className="text-[10px] text-amber-400 hover:text-amber-300 underline">
+              Activate
+            </button>
           )}
           <span className="text-[10px] text-white/20 ml-auto">{appVersion}</span>
         </div>
@@ -889,6 +958,63 @@ function App() {
           <div className="h-2 rounded-full bg-white/10 overflow-hidden">
             <div className="h-full bg-gradient-to-r from-brand-600 to-brand-400 transition-all duration-500 ease-out"
               style={{ width: `${pct}%` }} />
+          </div>
+        </div>
+      )}
+
+      {/* License activation modal — Pro only */}
+      {showActivation && isPro && !licenseValid && (
+        <div className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm flex items-center justify-center p-6">
+          <div className="w-full max-w-md bg-[#12121c] rounded-2xl border border-white/10 p-8 shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-400 flex items-center justify-center text-2xl text-black font-bold mx-auto mb-3">✨</div>
+              <h2 className="text-xl font-semibold text-white">Activate MagiDiva Pro</h2>
+              <p className="text-xs text-white/50 mt-1">Enter your license key from the purchase email</p>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-white/50 mb-1 block">Email (used at purchase)</label>
+                <input
+                  value={actEmail}
+                  onChange={(e) => setActEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  disabled={actBusy}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleActivate(); }}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-white/30 disabled:opacity-50"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-white/50 mb-1 block">License Key</label>
+                <input
+                  value={actKey}
+                  onChange={(e) => setActKey(e.target.value)}
+                  placeholder="MGD-XXXX-XXXX-XXXX-XXXX"
+                  disabled={actBusy}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleActivate(); }}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-white/30 font-mono tracking-wider disabled:opacity-50"
+                />
+              </div>
+
+              {actMsg && (
+                <div className={`text-xs px-3 py-2 rounded ${
+                  actMsg.includes("✓") || actMsg.includes("activated") ? "bg-green-900/40 border border-green-500/30 text-green-300" :
+                  "bg-red-900/40 border border-red-500/30 text-red-300"
+                }`}>{actMsg}</div>
+              )}
+
+              <button
+                onClick={handleActivate}
+                disabled={actBusy}
+                className="w-full py-3 rounded-lg font-semibold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black disabled:opacity-50 disabled:cursor-not-allowed transition">
+                {actBusy ? "Activating..." : "✨ Activate"}
+              </button>
+
+              <p className="text-center text-[11px] text-white/40 mt-3">
+                <a href="https://magidiva.com/pro" target="_blank"
+                  className="hover:text-amber-400 underline">Don't have a key? Buy Pro →</a>
+              </p>
+            </div>
           </div>
         </div>
       )}
