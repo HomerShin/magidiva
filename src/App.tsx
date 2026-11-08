@@ -62,6 +62,8 @@ function App() {
   const [center, setCenter] = useState(true);
   const [presets, setPresets] = useState<SizePreset[]>([]);
   const [selectedPreset, setSelectedPreset] = useState("Shopify 2048x2048");
+  const [customW, setCustomW] = useState(2048);
+  const [customH, setCustomH] = useState(2048);
   const [models, setModels] = useState<ModelPreset[]>([]);
   const [selectedModel, setSelectedModel] = useState("birefnet-general-lite");
   const [progress, setProgress] = useState<{ current: number; total: number; phase?: Phase } | null>(null);
@@ -271,6 +273,7 @@ function App() {
 
   // Shared opts builder — used by both processBatch (Pro) and processSingle (Community)
   const buildProcessOpts = () => {
+    const isCustom = selectedPreset === "Custom";
     const preset = presets.find((p) => p.name === selectedPreset);
     const h = bgColor.replace("#", "");
     return {
@@ -281,8 +284,8 @@ function App() {
       bg_g: parseInt(h.substring(2, 4), 16),
       bg_b: parseInt(h.substring(4, 6), 16),
       center,
-      target_w: preset?.w ?? 0,
-      target_h: preset?.h ?? 0,
+      target_w: isCustom ? customW : (preset?.w ?? 0),
+      target_h: isCustom ? customH : (preset?.h ?? 0),
       watermark_path: wmPath || undefined,
       watermark_opacity: wmOpacity,
       watermark_position: wmPath ? wmPosition : undefined,
@@ -405,7 +408,9 @@ function App() {
   const selectedFile = files.find((f) => f.id === selectedFileId) ?? files[0];
   const showGallery = files.length > 0 && (doneCount > 0 || isProcessing);
   const preset = presets.find((p) => p.name === selectedPreset);
-  const sizeLabel = preset && preset.w > 0 ? `${preset.w}×${preset.h}` : "Original";
+  const sizeLabel = selectedPreset === "Custom"
+    ? `${customW}×${customH}`
+    : (preset && preset.w > 0 ? `${preset.w}×${preset.h}` : "Original");
 
   // 处理中的那一张还没完成，不能算进进度；否则一开始就显示 100%，让人误以为已经处理完
   const pct = progress && progress.total > 0
@@ -476,16 +481,34 @@ function App() {
               <span className="text-sm text-white/80">Background color</span>
             </label>
             {whiteBg && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <input type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)}
                   className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent" />
+                <input
+                  value={bgColor}
+                  onChange={(e) => {
+                    let v = e.target.value;
+                    // auto-prepend # if user typed hex without it
+                    if (/^[0-9a-fA-F]{6}$/.test(v)) v = "#" + v;
+                    if (/^#[0-9a-fA-F]{6}$/.test(v)) setBgColor(v);
+                  }}
+                  onBlur={(e) => {
+                    // normalize on blur
+                    const v = e.target.value.toLowerCase();
+                    if (/^#?[0-9a-f]{6}$/.test(v)) setBgColor(v.startsWith("#") ? v : "#" + v);
+                    else setBgColor("#ffffff");
+                  }}
+                  className="w-20 bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white/80 font-mono"
+                  placeholder="#ffffff"
+                  maxLength={7}
+                />
                 <div className="flex gap-1">
                   {[
                     ["#ffffff", "White"], ["#f5f5f5", "Light"], ["#d0d0d0", "Gray"],
                     ["#1a1a24", "Dark"], ["#ff6b6b", "Red"], ["#4dabf7", "Blue"],
                   ].map(([c, label]) => (
                     <button key={c} title={label} onClick={() => setBgColor(c)}
-                      className={`w-6 h-6 rounded border transition-transform hover:scale-110 ${bgColor === c ? "ring-2 ring-brand-500" : "border-white/20"}`}
+                      className={`w-6 h-6 rounded border transition-transform hover:scale-110 ${bgColor.toLowerCase() === c.toLowerCase() ? "ring-2 ring-brand-500" : "border-white/20"}`}
                       style={{ backgroundColor: c }} />
                   ))}
                 </div>
@@ -508,37 +531,56 @@ function App() {
                 </select>
               </div>
             )}
-            <div>
-              <label className="text-xs text-white/50 mb-1 block">AI Model</label>
-              <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-sm text-white/80">
-                {models.map((m) => (
-                  <option key={m.name} value={m.name} className="bg-[#1a1a24]">
-                    {m.name} — {m.description}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-white/50 mb-1 block">Canvas Size</label>
-              <select value={selectedPreset} onChange={(e) => setSelectedPreset(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-sm text-white/80">
-                {presets.map((p) => (
-                  <option key={p.name} value={p.name} className="bg-[#1a1a24]">{p.name}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-white/50 mb-1 block">Output Format</label>
-              <select value={outFormat} onChange={(e) => setOutFormat(e.target.value as "png" | "jpg" | "webp")}
-                className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-sm text-white/80">
-                <option value="png" className="bg-[#1a1a24]">PNG — lossless, transparent</option>
-                <option value="jpg" className="bg-[#1a1a24]">JPG — smallest, no transparency</option>
-                <option value="webp" className="bg-[#1a1a24]">WebP — lossless, small</option>
-              </select>
-            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2">
+                <label className="text-xs text-white/50 mb-1 block">AI Model</label>
+                <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-sm text-white/80">
+                  {models.map((m) => (
+                    <option key={m.name} value={m.name} className="bg-[#1a1a24]">
+                      {m.name} — {m.description}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-span-2">
+                <label className="text-xs text-white/50 mb-1 block">Canvas Size</label>
+                <select value={selectedPreset} onChange={(e) => setSelectedPreset(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-sm text-white/80">
+                  {presets.map((p) => (
+                    <option key={p.name} value={p.name} className="bg-[#1a1a24]">{p.name}</option>
+                  ))}
+                  <option value="Custom" className="bg-[#1a1a24]">Custom...</option>
+                </select>
+              </div>
+              {selectedPreset === "Custom" && (
+                <div className="col-span-2 flex items-center gap-3">
+                  <div className="flex-1">
+                    <label className="text-xs text-white/50 mb-1 block">Width (px)</label>
+                    <input type="number" min={100} max={10000} value={customW}
+                      onChange={(e) => setCustomW(Math.max(100, Math.min(10000, parseInt(e.target.value) || 0)))}
+                      className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-sm text-white/80" />
+                  </div>
+                  <span className="pt-5 text-white/30 text-lg">×</span>
+                  <div className="flex-1">
+                    <label className="text-xs text-white/50 mb-1 block">Height (px)</label>
+                    <input type="number" min={100} max={10000} value={customH}
+                      onChange={(e) => setCustomH(Math.max(100, Math.min(10000, parseInt(e.target.value) || 0)))}
+                      className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-sm text-white/80" />
+                  </div>
+                </div>
+              )}
+              <div className="col-span-2">
+                <label className="text-xs text-white/50 mb-1 block">Output Format</label>
+                <select value={outFormat} onChange={(e) => setOutFormat(e.target.value as "png" | "jpg" | "webp")}
+                  className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-sm text-white/80">
+                  <option value="png" className="bg-[#1a1a24]">PNG — lossless, transparent</option>
+                  <option value="jpg" className="bg-[#1a1a24]">JPG — smallest, no transparency</option>
+                  <option value="webp" className="bg-[#1a1a24]">WebP — lossless, small</option>
+                </select>
+              </div>
             {outFormat === "jpg" && (
-              <div>
+              <div className="col-span-2">
                 <div className="flex items-center justify-between text-xs text-white/50 mb-1">
                   <span>JPG Quality</span>
                   <span className="text-white/70">{quality}</span>
@@ -548,6 +590,7 @@ function App() {
                   className="w-full accent-brand-500" />
               </div>
             )}
+            </div>
           </div>
 
           <div className="p-4 border-b border-white/5 space-y-3">
@@ -560,6 +603,16 @@ function App() {
             </div>
             {wmPath && (
               <>
+                <div className="flex items-start gap-3">
+                  <div className="w-14 h-14 rounded border border-white/10 bg-white/5 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    <img src={fileUrl(wmPath)} alt="Watermark preview" className="max-w-full max-h-full object-contain" />
+                  </div>
+                  <div className="text-[11px] text-white/40 truncate flex-1 leading-relaxed">
+                    {wmPath.split(/[/\\]/).pop()}
+                    <br />
+                    {wmPath.split(/[/\\]/).slice(0, -1).join("/")}
+                  </div>
+                </div>
                 <div>
                   <div className="flex items-center justify-between text-xs text-white/50 mb-1">
                     <span>Opacity</span>
