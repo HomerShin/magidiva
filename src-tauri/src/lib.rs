@@ -321,7 +321,7 @@ struct AppInfo {
 // ──────────────────────────────────────────────────
 
 /// License server base URL — deployed as Cloudflare Worker.
-const LICENSE_SERVER: &str = "https://license.magidiva.com";
+const LICENSE_SERVER: &str = "https://magidiva-license.805998855.workers.dev";
 
 /// Client-side HMAC public key (used for quick local signature check — reserved).
 /// Server private key generates the signature — never shipped to clients.

@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+// Auto-upgrade HTTP → HTTPS (once GitHub Pages cert is issued)
+if (location.protocol === 'http:' && location.hostname !== 'localhost') {
+  location.replace('https://' + location.hostname + location.pathname + location.search);
+}
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MagiDiva — Remove Image Background in One Click</title>
