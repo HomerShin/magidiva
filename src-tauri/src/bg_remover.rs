@@ -31,11 +31,24 @@ fn sessions() -> &'static Mutex<HashMap<String, SessionCache>> {
     MAP.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
+fn ort_env() -> &'static ort::environment::Environment {
+    static ENV: OnceLock<Mutex<Option<ort::environment::Environment>>> = OnceLock::new();
+    let slot = ENV.get_or_init(|| Mutex::new(None));
+    let mut guard = slot.lock().expect("ort env lock poisoned");
+    if guard.is_none() {
+        let env = ort::init().build().expect("ort::init failed");
+        *guard = Some(env);
+    }
+    // Leak the &'static reference — safe because it's initialized once and never dropped
+    let env_ref: &ort::environment::Environment = guard.as_ref().unwrap();
+    unsafe { &*(env_ref as *const ort::environment::Environment) }
+}
+
 fn load_session(model_name: &str, on_download: &dyn Fn(f32)) -> Result<SessionCache> {
     let (model_path, info) = ensure_model(model_name, on_download)?;
-    let env = ort::init().build().map_err(|e| anyhow!("init ort env: {e}"))?;
+    let env = ort_env();
 
-    let sess = match Session::builder(&env)
+    let sess = match Session::builder(env)
         .map_err(|e| anyhow!("session builder: {e}"))?
         .with_execution_providers([DirectML::default().build()])
         .map_err(|e| anyhow!("directml build: {e}"))?

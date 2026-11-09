@@ -4,13 +4,13 @@ compatibility_date = "2025-11-08"
 workers_dev = true
 
 kv_namespaces = [
-  { binding = "MAGIDIVA_LICENSES", id = "YOUR_KV_NAMESPACE_ID" }
+  { binding = "MAGIDIVA_LICENSES", id = "7b9ceac87d34443aa04d29062b2b7b05" }
 ]
 
 # Route on custom domain (optional)
-# routes = [
-#   { pattern = "license.magidiva.com/*", zone_name = "magidiva.com" }
-# ]
+routes = [
+  { pattern = "license.magidiva.com/*", zone_name = "magidiva.com" }
+]
 
 # Environment variables (set via wrangler secret put)
 # wrangler secret put ADMIN_KEY
